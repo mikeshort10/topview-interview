@@ -6,6 +6,7 @@ import './index.scss';
 import { addToCart, IAddToCartPayload } from '../../state/redux';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 const { products } = bikerentals;
 
@@ -16,7 +17,8 @@ interface IDispatchProps {
 export class ProductsPage extends React.Component<IDispatchProps> {
   renderBikes = (): Array<JSX.Element | null> => {
     return map(products, (product: IProduct, i) => {
-      if (product.product_type === 'bike') {
+      const { product_type } = product;
+      if (product_type === 'bike') {
         return (
           <Bike key={i} product={product} addToCart={this.props.addToCart} />
         );
@@ -27,7 +29,14 @@ export class ProductsPage extends React.Component<IDispatchProps> {
 
   render(): JSX.Element {
     console.log(this.props.addToCart);
-    return <div className="products-page">{this.renderBikes()}</div>;
+    return (
+      <>
+        <div className="products-page">{this.renderBikes()}</div>
+        <Link to="/cart" className="btn btn-primary float-right mx-5 mb-5">
+          Procede to Checkout
+        </Link>
+      </>
+    );
   }
 }
 

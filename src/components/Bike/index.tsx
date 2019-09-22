@@ -23,9 +23,7 @@ export interface IProps {
 }
 
 export interface ISetableStateProps {
-  bikes?: number;
-  adultHelmets?: number;
-  kidsHelmets?: number;
+  quantity?: number;
   insurances?: number;
 }
 
@@ -146,7 +144,7 @@ export class Bike extends React.Component<IProps, IState> {
       <div className="bike">
         <img src={image} alt={name} />
         {this.renderAdjustQuantity(name, 'bikes')}
-        {this.state.bikes
+        {this.state.quantity && 
           ? this.renderAdjustQuantity(products[5].name, 'insurances')
           : null}
         <button className="btn btn-primary btn-block" onClick={this.addToCart}>
