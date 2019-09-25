@@ -3,14 +3,14 @@ import { map } from 'lodash';
 import { IProduct, Bike } from '../../components/Bike';
 import * as bikerentals from '../../json/bikerentals.json';
 import './index.scss';
-import { addToCart, IAddToCartPayload } from '../../state/redux';
 import { Dispatch, bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
+import { addToCart } from '../../state/orders';
 
 const { products } = bikerentals;
 
 interface IDispatchProps {
-  addToCart: (product: IAddToCartPayload) => void;
+  addToCart: typeof addToCart;
 }
 
 export class ProductsPage extends React.Component<IDispatchProps> {

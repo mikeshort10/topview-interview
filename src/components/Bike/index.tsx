@@ -1,6 +1,5 @@
 import React from 'react';
 import './index.scss';
-import { IAddToCartPayload } from '../../state/redux';
 import * as bikerentals from '../../json/bikerentals.json';
 
 const { products } = bikerentals;
@@ -19,20 +18,16 @@ export interface IProduct {
 
 export interface IProps {
   product: IProduct;
-  addToCart(product: IAddToCartPayload): void;
+  addToCart(order: IState): void;
 }
 
-export interface ISetableStateProps {
-  bikes?: number;
-  adultHelmets?: number;
-  kidsHelmets?: number;
-  insurances?: number;
+function alternateColors(isTrue: boolean): string {
+  return isTrue ? 'colorScheme' : 'inverseScheme';
 }
 
 interface IAdjustQuantityProps {
-  label: string;
   value: number;
-  isMaxedOut: '' | 'disabled';
+  price: number;
   changeQuantityByOne(change: 1 | -1): ClickEvent;
   changeQuantity(e: React.ChangeEvent<HTMLInputElement>): void;
 }
@@ -40,8 +35,8 @@ interface IAdjustQuantityProps {
 function AdjustQuantity(props: IAdjustQuantityProps): JSX.Element {
   return (
     <div className="input-group w-100">
-      <div className="input-group-prepend w-50">
-        <div className="input-group-text w-100">{props.label}</div>
+      <div className="input-group-prepend">
+        <div className="input-group-text w-100">Quantity</div>
       </div>
       <input
         className="form-control"
@@ -56,7 +51,7 @@ function AdjustQuantity(props: IAdjustQuantityProps): JSX.Element {
           -
         </button>
         <button
-          className={`btn btn-success ${props.isMaxedOut}`}
+          className={`btn btn-success`}
           onClick={props.changeQuantityByOne(1)}
         >
           +
@@ -66,89 +61,180 @@ function AdjustQuantity(props: IAdjustQuantityProps): JSX.Element {
   );
 }
 
+interface IHelmetProps {
+  helmets: boolean;
+  adultHelmet: boolean;
+  handleAddOn(
+    key: string,
+    isAdded?: boolean
+  ): (e: React.MouseEvent<HTMLButtonElement>) => void;
+}
+
+function Helmets(props: IHelmetProps): JSX.Element | null {
+  if (!props.helmets) {
+    return null;
+  }
+  let productNum = 2;
+  const helmets: JSX.Element[] = [];
+  const selectedProduct = props.adultHelmet ? 3 : 4;
+  while (productNum++ < 4) {
+    console.log(productNum);
+    const { name, price, image } = products[productNum];
+    const color = alternateColors(selectedProduct === productNum);
+    console.log(props.adultHelmet, selectedProduct, productNum);
+    const selectAdult = !!(productNum - 4);
+    helmets.push(
+      <div key={productNum} className="helmets">
+        <button
+          onClick={props.handleAddOn('adultHelmet', selectAdult)}
+          className={`helmets-caption ${color}`}
+        >
+          {`${name.slice(0, -7)} - $${price.toFixed(2)}`}
+        </button>
+        <img src={image} alt={name} />
+      </div>
+    );
+  }
+  return <div className="helmets-container">{helmets}</div>;
+}
+
 export interface IState {
+  id: number;
   bikes: number;
-  adultHelmets: number;
-  kidsHelmets: number;
-  insurances: number;
+  helmet: boolean;
+  adultHelmet: boolean;
+  insurance: boolean;
 }
 
 export class Bike extends React.Component<IProps, IState> {
   constructor(props: IProps) {
     super(props);
-    this.state = { bikes: 0, adultHelmets: 0, kidsHelmets: 0, insurances: 0 };
+    this.state = {
+      id: this.props.product.id,
+      bikes: 1,
+      helmet: false,
+      adultHelmet: this.props.product.id !== 3,
+      insurance: false
+    };
   }
 
-  changeQuantityByOne = (key: keyof IState) => (change: 1 | -1) => () => {
-    const { bikes, adultHelmets, kidsHelmets, insurances } = this.state;
-    const newProps: ISetableStateProps = {};
-    let value: number = this.state[key] + change;
-    value = Math.max(value, 0);
-    if (key !== 'bikes') {
-      if (this.isMaxedOut(key) === 'disabled' && change === 1) {
-        return;
-      }
-      value = Math.min(value, bikes);
-    } else if (key === 'bikes' && change === -1) {
-      newProps.insurances = Math.min(insurances, value);
-      const totalHelmets = Math.min(adultHelmets + kidsHelmets, value);
-      newProps.kidsHelmets = Math.max(totalHelmets - adultHelmets, 0);
-      newProps.adultHelmets = totalHelmets - newProps.kidsHelmets;
-    }
-    newProps[key] = value;
-    this.setState(newProps as Pick<IState, typeof key>);
+  // changeQuantityByOne = (key: keyof IState) => (change: 1 | -1) => () => {
+  //   const { bikes, adultHelmet, kidsHelmets, insurances } = this.state;
+  //   const newProps: ISetableStateProps = {};
+  //   let value: number = this.state[key] + change;
+  //   value = Math.max(value, 0);
+  //   if (key !== 'bikes') {
+  //     if (this.isMaxedOut(key) === 'disabled' && change === 1) {
+  //       return;
+  //     }
+  //     value = Math.min(value, bikes);
+  //   } else if (key === 'bikes' && change === -1) {
+  //     newProps.insurances = Math.min(insurances, value);
+  //     const totalHelmets = Math.min(adultHelmet + kidsHelmets, value);
+  //     newProps.kidsHelmets = Math.max(totalHelmets - adultHelmet, 0);
+  //     newProps.adultHelmet = totalHelmets - newProps.kidsHelmets;
+  //   }
+  //   newProps[key] = value;
+  //   this.setState(newProps as Pick<IState, typeof key>);
+  // };
+
+  // changeQuantity = (key: keyof IState) => (
+  //   e: React.ChangeEvent<HTMLInputElement>
+  // ) => {
+  //   let value = +e.target.value;
+  //   if (key !== 'bikes') {
+  //     value = Math.min(value, this.state.bikes);
+  //   }
+  //   const newProps = { [key]: value };
+  //   this.setState(newProps as Pick<IState, typeof key>);
+  // };
+
+  changeQuantity = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const bikes: number = Math.max(+e.target.value, 0);
+    this.setState({ bikes });
   };
 
-  changeQuantity = (key: keyof IState) => (
-    e: React.ChangeEvent<HTMLInputElement>
+  changeQuantityByOne = (change: 1 | -1) => (
+    e: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>
   ) => {
-    let value = +e.target.value;
-    if (key !== 'bikes') {
-      value = Math.min(value, this.state.bikes);
-    }
-    const newProps = { [key]: value };
-    this.setState(newProps as Pick<IState, typeof key>);
+    const bikes: number = Math.max(this.state.bikes + change, 0);
+    this.setState({ bikes });
   };
 
-  renderAdjustQuantity = (label: string, key: keyof IState) => {
+  renderAdjustQuantity = (key: keyof IState) => {
     return (
       <AdjustQuantity
-        label={label}
-        value={this.state[key]}
-        isMaxedOut={this.isMaxedOut(key)}
-        changeQuantity={this.changeQuantity(key)}
-        changeQuantityByOne={this.changeQuantityByOne(key)}
+        value={this.state.bikes}
+        price={this.props.product.price * this.state.bikes}
+        changeQuantity={this.changeQuantity}
+        changeQuantityByOne={this.changeQuantityByOne}
       />
     );
   };
 
-  isMaxedOut = (key: keyof IState) => {
-    const { bikes, adultHelmets, kidsHelmets } = this.state;
-    if (key === 'bikes') {
-      return '';
-    } else if (key !== 'insurances') {
-      return bikes === adultHelmets + kidsHelmets ? 'disabled' : '';
-    }
-    return this.state.bikes <= this.state[key] ? 'disabled' : '';
+  // isMaxedOut = (key: keyof IState) => {
+  //   const { bikes, adultHelmet, kidsHelmets } = this.state;
+  //   if (key === 'bikes') {
+  //     return '';
+  //   } else if (key !== 'insurances') {
+  //     return bikes === adultHelmet + kidsHelmets ? 'disabled' : '';
+  //   }
+  //   return this.state.bikes <= this.state[key] ? 'disabled' : '';
+  // };
+
+  handleAddOn = (
+    key: 'insurance' | 'helmet' | 'adultHelmet',
+    isAdded?: boolean
+  ) => (
+    e: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>
+  ) => {
+    const value = isAdded !== undefined ? isAdded : !this.state[key];
+    console.log(value);
+    const newProps = { [key]: value };
+    console.log(newProps);
+    this.setState(newProps as Pick<IState, typeof key>);
+  };
+
+  include = (label: string, key: 'insurance' | 'helmet', price?: number) => {
+    const isTrue = this.state[key];
+    const formattedPrice = price ? `- $${price.toFixed(2)}` : ``;
+    const text = isTrue ? 'Remove' : key === 'helmet' ? 'Choose' : 'Add';
+    return (
+      <>
+        <button
+          className={`w-50 ${alternateColors(isTrue)}`}
+          onClick={this.handleAddOn(key)}
+        >{`${text} ${label} ${formattedPrice}`}</button>
+      </>
+    );
   };
 
   addToCart = () => {
     const { addToCart, product } = this.props;
     const { id } = product;
-    if (id === 1 || id === 2 || id === 3) {
-      addToCart({ ...this.state, id });
-    }
+    addToCart({ ...this.state, id });
   };
 
   render(): JSX.Element {
-    const { name, image } = this.props.product;
+    const { name, image, price } = this.props.product;
     return (
       <div className="bike">
+        <h2>{`${name} ($${price.toFixed(2)})`}</h2>
         <img src={image} alt={name} />
-        {this.renderAdjustQuantity(name, 'bikes')}
-        {this.state.bikes
-          ? this.renderAdjustQuantity(products[5].name, 'insurances')
-          : null}
+        {this.renderAdjustQuantity('bikes')}
+        {this.state.bikes ? (
+          <>
+            <div className="include-boxes">
+              {this.include('Insurance', 'insurance', products[5].price)}
+              {this.include('Helmet', 'helmet')}
+            </div>
+            <Helmets
+              helmets={this.state.helmet}
+              adultHelmet={this.state.adultHelmet}
+              handleAddOn={this.handleAddOn}
+            />
+          </>
+        ) : null}
         <button className="btn btn-primary btn-block" onClick={this.addToCart}>
           Add to Cart
         </button>

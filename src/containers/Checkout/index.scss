@@ -1,0 +1,14 @@
+.checkout {
+  width: 90%;
+  margin: 50px auto;
+  padding: 10px;
+  border: black solid 1px;
+  border-radius: 10px;
+  max-width: 600px;
+}
+
+@media (min-width: 500px) {
+  .checkout {
+    width: 50%;
+  }
+}

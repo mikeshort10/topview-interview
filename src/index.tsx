@@ -1,22 +1,29 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
-import { store } from './state/redux';
-import { Route, Switch, Router } from 'react-router';
+import { store, history } from './state';
+import { Route, Switch } from 'react-router';
+import { ConnectedRouter } from 'connected-react-router';
 import { Nav } from './containers/Nav';
 import ProductsPage from './containers/ProductsPage';
-import { createBrowserHistory } from 'history';
-import { Cart } from './containers/Cart';
+import Cart from './containers/Cart';
+import Checkout from './containers/Checkout';
+import { Confirmation } from './containers/Confirmation';
+
+console.log(store.getState());
 
 ReactDOM.render(
   <Provider store={store}>
-    <Router history={createBrowserHistory()}>
+    <ConnectedRouter history={history}>
       <Nav />
       <Switch>
         <Route path="/" exact={true} component={ProductsPage} />
         <Route path="/cart" component={Cart} />
+        <Route path="/checkout" component={Checkout} />
+        <Route path="/review" component={Cart} />
+        <Route path="/confirmation" component={Confirmation} />
       </Switch>
-    </Router>
+    </ConnectedRouter>
   </Provider>,
   document.getElementById('root')
 );
