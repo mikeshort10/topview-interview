@@ -10,6 +10,8 @@ export interface IAction<T> extends Action<string> {
 export interface IOrder extends IProduct {
   quantity: number;
   insurance: number;
+  adultHelmet: number;
+  kidHelmet: number;
 }
 
 export interface IOrders {
@@ -21,3 +23,5 @@ export interface IStore {
   orders: IOrders;
   creditCard: ICreditCardInfo;
 }
+
+export type SubItemKeys = 'insurance' | 'adultHelmet' | 'kidHelmet';

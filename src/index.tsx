@@ -10,8 +10,6 @@ import Cart from './containers/Cart';
 import Checkout from './containers/Checkout';
 import { Confirmation } from './containers/Confirmation';
 
-console.log(store.getState());
-
 ReactDOM.render(
   <Provider store={store}>
     <ConnectedRouter history={history}>

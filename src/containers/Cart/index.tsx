@@ -1,85 +1,189 @@
 import React from 'react';
-import { IStore, IOrder } from '../../state';
-import { map, forEach, isEqual, reduce } from 'lodash';
+import { IStore, IOrder, SubItemKeys } from '../../state';
+import { map, forEach, isEqual } from 'lodash';
 import { connect } from 'react-redux';
-import { IProduct } from '../../components/Bike';
 import * as bikeRentals from '../../json/bikerentals.json';
 import { Link } from 'react-router-dom';
 import './index.scss';
 import { bindActionCreators, Dispatch } from 'redux';
-import { adjustQuantity } from '../../state/orders';
+import { adjustQuantity, checkout } from '../../state/orders';
 
-const insuranceInfo: IProduct = bikeRentals.products[5];
+export type BlurInput = (e: React.FocusEvent<HTMLInputElement>) => void;
+export type ChangeInput = (e: React.ChangeEvent<HTMLInputElement>) => void;
+
+const { products } = bikeRentals;
+
+interface RowProps {
+  padding: boolean;
+  label: string;
+  price: number;
+  quantity: number;
+  shouldRender: boolean;
+  inputOrDiv: JSX.Element;
+}
+
+function Row(props: RowProps): JSX.Element | null {
+  const { padding, label, price, quantity, shouldRender } = props;
+  if (shouldRender) {
+    return (
+      <tr>
+        <td key="name" className={padding ? 'pl-5' : ''}>
+          {label}
+        </td>
+        <td key="price">{`$${price.toFixed(2)}`}</td>
+        <td key="quantity" className="quantity-input">
+          {props.inputOrDiv}
+        </td>
+        <td key="total">{`$${(price * quantity).toFixed(2)}`}</td>
+      </tr>
+    );
+  }
+  return null;
+}
 
 interface LineItemProps {
-  kidHelmets: number;
-  adultHelmets: number;
-  totalBikes: number;
   order: IOrder;
   adjustQuantity: typeof adjustQuantity;
   location: string;
 }
 
-interface LineItemState {
-  quantity: number;
-}
-class LineItem extends React.Component<LineItemProps, LineItemState> {
+class LineItem extends React.Component<LineItemProps, IOrder> {
   constructor(props: LineItemProps) {
     super(props);
-    this.state = { quantity: this.props.order.quantity };
+    this.state = { ...this.props.order };
   }
 
-  adjustQuantity = (): void => {
+  adjustQuantity: BlurInput = e => {
     const { id } = this.props.order;
     const { quantity } = this.state;
     this.props.adjustQuantity(id, quantity);
   };
 
-  updateQuantity = (e: React.ChangeEvent<HTMLInputElement>): void => {
-    const { totalBikes, order, kidHelmets, adultHelmets } = this.props;
-    let quantity = Math.max(+e.target.value, 0);
-    if (isNaN(quantity)) {
-      quantity = 0;
-    }
-    if (order.product_type === 'addon') {
-      quantity = Math.min(quantity, totalBikes);
-    } else if (order.id === 4) {
-      quantity = Math.min(quantity, totalBikes - kidHelmets);
-    } else if (order.id === 5) {
-      quantity = Math.min(quantity, totalBikes - adultHelmets);
-    }
+  updateQuantity: ChangeInput = e => {
+    const { value } = e.target;
+    console.log(value);
+    const quantity = Math.max(+value, 0);
     this.setState({ quantity });
   };
 
-  inputOrDiv = () => {
+  inputOrDiv = (onChange: ChangeInput, onBlur: BlurInput, quantity: number) => {
     if (this.props.location === '/cart') {
       return (
         <input
-          onChange={this.updateQuantity}
-          onBlur={this.adjustQuantity}
+          onChange={onChange}
+          onBlur={onBlur}
           className="form-control"
-          value={this.state.quantity}
+          value={quantity}
         />
       );
     }
-    return <div>{this.state.quantity}</div>;
+    return <div>{quantity}</div>;
   };
 
   render(): JSX.Element {
-    const { product_type, quantity, name, price } = this.props.order;
+    const { order } = this.props;
+    const { product_type, name, quantity, ...passedProps } = order;
     const label = product_type === 'addon' ? ` +   ${name}` : name;
-    const padding = product_type === 'addon' ? 'pl-5' : '';
     return (
-      <tr>
-        <td key="name" className={padding}>
-          {label}
-        </td>
-        <td key="price">{`$${price.toFixed(2)}`}</td>
-        <td key="quantity" className="quantity-input">
-          {this.inputOrDiv()}
-        </td>
-        <td key="total">{`$${(price * quantity).toFixed(2)}`}</td>
-      </tr>
+      <>
+        <Row
+          shouldRender={!!quantity}
+          quantity={this.state.quantity}
+          {...passedProps}
+          label={label}
+          padding={false}
+          inputOrDiv={this.inputOrDiv(
+            this.updateQuantity,
+            this.adjustQuantity,
+            this.state.quantity
+          )}
+        />
+        <SubItem
+          shouldRender={!!this.props.order.kidHelmet}
+          order={order}
+          subItemKey="kidHelmet"
+          adjustQuantity={this.props.adjustQuantity}
+          label={'Kids Helmet'}
+          price={products[3].price}
+          quantity={order.kidHelmet}
+          inputOrDiv={this.inputOrDiv}
+        />
+        <SubItem
+          shouldRender={!!this.props.order.adultHelmet}
+          subItemKey="adultHelmet"
+          order={order}
+          adjustQuantity={this.props.adjustQuantity}
+          label={'Adult Helmet'}
+          price={products[4].price}
+          quantity={order.adultHelmet}
+          inputOrDiv={this.inputOrDiv}
+        />
+        <SubItem
+          shouldRender={!!this.props.order.insurance}
+          order={order}
+          subItemKey="insurance"
+          adjustQuantity={this.props.adjustQuantity}
+          label={'Insurance'}
+          price={products[5].price}
+          quantity={order.insurance}
+          inputOrDiv={this.inputOrDiv}
+        />
+      </>
+    );
+  }
+}
+
+interface SubItemProps {
+  shouldRender: boolean;
+  order: IOrder;
+  quantity: number;
+  price: number;
+  label: string;
+  subItemKey: SubItemKeys;
+  adjustQuantity: typeof adjustQuantity;
+  inputOrDiv(
+    onChange: ChangeInput,
+    onBlur: BlurInput,
+    quantity: number
+  ): JSX.Element;
+}
+
+interface SubItemState {
+  quantity: number;
+}
+
+class SubItem extends React.Component<SubItemProps, SubItemState> {
+  constructor(props: SubItemProps) {
+    super(props);
+    this.state = { quantity: this.props.quantity };
+  }
+
+  changeQuantity: ChangeInput = e => {
+    const bikes = this.props.order.quantity;
+    let quantity: number = +e.target.value;
+    quantity = Math.min(bikes, quantity);
+    quantity = Math.max(quantity, 0);
+    this.setState({ quantity });
+  };
+
+  pushQuantityToStore: BlurInput = e => {
+    const { subItemKey, order, quantity } = this.props;
+    this.props.adjustQuantity(order.id, quantity, subItemKey);
+  };
+
+  render(): JSX.Element {
+    const { inputOrDiv, quantity, ...props } = this.props;
+    return (
+      <Row
+        {...props}
+        quantity={this.state.quantity}
+        padding={true}
+        inputOrDiv={inputOrDiv(
+          this.changeQuantity,
+          this.pushQuantityToStore,
+          this.state.quantity
+        )}
+      />
     );
   }
 }
@@ -91,6 +195,7 @@ interface IStateProps {
 
 interface IDispatchProps {
   adjustQuantity: typeof adjustQuantity;
+  checkout: typeof checkout;
 }
 
 interface IProps extends IStateProps, IDispatchProps {}
@@ -104,61 +209,31 @@ export class Cart extends React.Component<IProps, IState> {
     super(props);
     this.state = { totalCost: 0 };
   }
-  renderRows = () => {
+  renderRows = (): Array<JSX.Element | null> => {
     const { orders } = this.props;
-    const bikes = [orders[1], orders[2], orders[3]];
-    const totalBikes = reduce(bikes, (total, bike) => total + bike.quantity, 0);
-    const adultHelmets = orders[4].quantity;
-    const kidHelmets = orders[5].quantity;
-    const rows = map(orders, (order, i) => {
-      if (!order.quantity) {
-        return null;
-      }
-      const { quantity, insurance } = order;
-      let insuranceLine: JSX.Element | null = null;
-      if (insurance) {
-        const insuranceProduct: IOrder = {
-          ...insuranceInfo,
-          quantity,
-          insurance: 0
-        };
-        insuranceLine = (
+    return map(orders, (order, i) => {
+      if (order.quantity) {
+        return (
           <LineItem
-            key={i + 'insurance'}
-            kidHelmets={kidHelmets}
-            adultHelmets={adultHelmets}
-            totalBikes={totalBikes}
-            location={this.props.location}
-            order={insuranceProduct}
-            adjustQuantity={adjustQuantity}
-          />
-        );
-      }
-      return (
-        <React.Fragment key={i}>
-          <LineItem
-            kidHelmets={kidHelmets}
-            adultHelmets={adultHelmets}
-            totalBikes={totalBikes}
             key={i}
             order={order}
             location={this.props.location}
             adjustQuantity={this.props.adjustQuantity}
           />
-          {insuranceLine}
-        </React.Fragment>
-      );
+        );
+      }
+      return null;
     });
-    return rows;
   };
 
   calculateTotalCost = () => {
     let totalCost = 0;
     forEach(this.props.orders, order => {
-      const { insurance, price, quantity } = order;
-      const insuranceCost = insurance ? +quantity * +insuranceInfo.price : 0;
-      totalCost += +price * +quantity + insuranceCost;
-      console.log(order.name, order, insuranceCost);
+      const { insurance, price, quantity, kidHelmet, adultHelmet } = order;
+      totalCost += price * quantity;
+      totalCost += kidHelmet * products[3].price;
+      totalCost += adultHelmet * products[4].price;
+      totalCost += insurance * products[5].price;
     });
     this.setState({ totalCost });
   };
@@ -173,8 +248,23 @@ export class Cart extends React.Component<IProps, IState> {
     }
   }
 
+  checkoutOrPayInfo = () => {
+    const className = 'btn btn-primary';
+    if (this.props.location === '/cart') {
+      return (
+        <Link to="/checkout" className={className}>
+          Checkout
+        </Link>
+      );
+    }
+    return (
+      <button onClick={this.props.checkout} className="btn btn-primary">
+        Rent Bikes
+      </button>
+    );
+  };
+
   render(): JSX.Element {
-    const isCart = this.props.location === '/cart';
     if (!this.state.totalCost) {
       return (
         <div className="text-center m-5">
@@ -207,12 +297,7 @@ export class Cart extends React.Component<IProps, IState> {
           </tbody>
         </table>
         <div className="checkout-buttons">
-          <Link
-            className="btn btn-primary"
-            to={isCart ? '/checkout' : '/confirmation'}
-          >
-            {isCart ? 'Checkout' : 'Rent Bikes'}
-          </Link>
+          {this.checkoutOrPayInfo()}
           <Link className="btn btn-secondary" to="/">
             Continue Shopping
           </Link>
@@ -228,7 +313,8 @@ const mapStateToProps = (state: IStore): IStateProps => ({
 });
 
 const mapDispatchToProps = (dispatch: Dispatch): IDispatchProps => ({
-  adjustQuantity: bindActionCreators(adjustQuantity, dispatch)
+  adjustQuantity: bindActionCreators(adjustQuantity, dispatch),
+  checkout: bindActionCreators(checkout, dispatch)
 });
 
 export default connect(

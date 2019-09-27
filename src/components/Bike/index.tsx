@@ -78,10 +78,8 @@ function Helmets(props: IHelmetProps): JSX.Element | null {
   const helmets: JSX.Element[] = [];
   const selectedProduct = props.adultHelmet ? 3 : 4;
   while (productNum++ < 4) {
-    console.log(productNum);
     const { name, price, image } = products[productNum];
     const color = alternateColors(selectedProduct === productNum);
-    console.log(props.adultHelmet, selectedProduct, productNum);
     const selectAdult = !!(productNum - 4);
     helmets.push(
       <div key={productNum} className="helmets">
@@ -117,37 +115,6 @@ export class Bike extends React.Component<IProps, IState> {
       insurance: false
     };
   }
-
-  // changeQuantityByOne = (key: keyof IState) => (change: 1 | -1) => () => {
-  //   const { bikes, adultHelmet, kidsHelmets, insurances } = this.state;
-  //   const newProps: ISetableStateProps = {};
-  //   let value: number = this.state[key] + change;
-  //   value = Math.max(value, 0);
-  //   if (key !== 'bikes') {
-  //     if (this.isMaxedOut(key) === 'disabled' && change === 1) {
-  //       return;
-  //     }
-  //     value = Math.min(value, bikes);
-  //   } else if (key === 'bikes' && change === -1) {
-  //     newProps.insurances = Math.min(insurances, value);
-  //     const totalHelmets = Math.min(adultHelmet + kidsHelmets, value);
-  //     newProps.kidsHelmets = Math.max(totalHelmets - adultHelmet, 0);
-  //     newProps.adultHelmet = totalHelmets - newProps.kidsHelmets;
-  //   }
-  //   newProps[key] = value;
-  //   this.setState(newProps as Pick<IState, typeof key>);
-  // };
-
-  // changeQuantity = (key: keyof IState) => (
-  //   e: React.ChangeEvent<HTMLInputElement>
-  // ) => {
-  //   let value = +e.target.value;
-  //   if (key !== 'bikes') {
-  //     value = Math.min(value, this.state.bikes);
-  //   }
-  //   const newProps = { [key]: value };
-  //   this.setState(newProps as Pick<IState, typeof key>);
-  // };
 
   changeQuantity = (e: React.ChangeEvent<HTMLInputElement>) => {
     const bikes: number = Math.max(+e.target.value, 0);
@@ -189,9 +156,7 @@ export class Bike extends React.Component<IProps, IState> {
     e: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>
   ) => {
     const value = isAdded !== undefined ? isAdded : !this.state[key];
-    console.log(value);
     const newProps = { [key]: value };
-    console.log(newProps);
     this.setState(newProps as Pick<IState, typeof key>);
   };
 

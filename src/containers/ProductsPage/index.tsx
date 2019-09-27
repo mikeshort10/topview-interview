@@ -26,7 +26,6 @@ export class ProductsPage extends React.Component<IDispatchProps> {
   };
 
   render(): JSX.Element {
-    console.log(this.props.addToCart);
     return <div className="products-page">{this.renderBikes()}</div>;
   }
 }

@@ -9,7 +9,7 @@ export const initialStore: IStore = {
     location: { pathname: '', state: '', hash: '', search: '' },
     action: 'REPLACE'
   },
-  orders: initialOrderState,
+  orders: initialOrderState(),
   creditCard: { cardNum: '', cardName: '', cardExp: '', cvv: '' }
 };
 
@@ -26,7 +26,6 @@ export const creditCardReducer = (
 ): ICreditCardInfo => {
   const handler = creditCardHandlers[action.type];
   const newState = handler ? handler(state, action.payload) : state;
-  console.log(newState);
   return newState;
 };
 
