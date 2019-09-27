@@ -1,7 +1,7 @@
 import { Dispatch } from 'redux';
 import { IState } from '../components/Bike';
 import * as bikeRentals from '../json/bikerentals.json';
-import { IAction, IOrders, IOrder, SubItemKeys } from './types';
+import { IAction, IOrders, IOrder } from './types';
 import { push } from 'connected-react-router';
 
 const { products } = bikeRentals;
@@ -24,13 +24,9 @@ const addToCartAction = (payload: IState) => ({
   payload
 });
 
-const adjustQuantityAction = (
-  id: number,
-  quantity: number,
-  subItemKey?: SubItemKeys
-) => ({
+const adjustQuantityAction = (order: IOrder): IAction<IOrder> => ({
   type: actionTypes.ADJUST_QUANTITY,
-  payload: { id, quantity, subItemKey }
+  payload: order
 });
 
 const createInitialOrder = (productNum: number): IOrder => ({
@@ -78,18 +74,9 @@ const handleAddToCart = (state: IOrders, payload: IState): IOrders => {
   return orders;
 };
 
-const handleAdjustQuantity = (
-  state: IOrders,
-  payload: {
-    id: number;
-    quantity: number;
-    subItemKey?: SubItemKeys;
-  }
-): IOrders => {
-  const { id, quantity, subItemKey } = payload;
-  const key = subItemKey || 'quantity';
-  const order = { ...state[id] };
-  order[key] = quantity;
+const handleAdjustQuantity = (state: IOrders, payload: IOrder): IOrders => {
+  const { id, quantity, insurance, adultHelmet, kidHelmet } = payload;
+  const order = { ...state[id], quantity, insurance, adultHelmet, kidHelmet };
   return { ...state, [id]: order };
 };
 
@@ -105,12 +92,8 @@ export const addToCart = (payload: IState) => {
   };
 };
 
-export const adjustQuantity = (
-  id: number,
-  quantity: number,
-  subItemKey?: SubItemKeys
-) => (dispatch: Dispatch) => {
-  dispatch(adjustQuantityAction(id, quantity, subItemKey));
+export const adjustQuantity = (order: IOrder) => (dispatch: Dispatch) => {
+  dispatch(adjustQuantityAction(order));
 };
 
 export const checkout = () => (dispatch: Dispatch) => {
