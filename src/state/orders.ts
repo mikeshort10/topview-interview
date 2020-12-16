@@ -1,6 +1,6 @@
 import { Dispatch } from 'redux';
 import { IState } from '../components/Bike';
-import * as bikeRentals from '../json/bikerentals.json';
+import  bikeRentals from '../json/bikerentals.json';
 import { IAction, IOrders, IOrder } from './types';
 import { push } from 'connected-react-router';
 
